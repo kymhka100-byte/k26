@@ -1,0 +1,41 @@
+# GitHub Actions - 2장 까기 APK 자동 빌드 .github/workflows/build.yml
+# main.py, buildozer.spec, wav 파일을 푸시하면 자동으로 APK를 만듭니다.
+
+name: Build APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+        with: 
+         python-version: '3.10'
+      - name: 빌드 캐시 (두 번째부터 빨라짐)
+        uses: actions/cache@v4
+        with:
+          path: ~/.buildozer
+          key: buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-
+
+      - name: 필요한 프로그램 설치
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          pip install buildozer
+
+      - name: APK 빌드
+        run: buildozer -v android debug
+
+      - name: APK 파일 저장
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-2jang-kkagi
+          path: bin/*.apk
